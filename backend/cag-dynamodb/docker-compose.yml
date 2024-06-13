@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+ dynamodb-local:
+   command: "-jar DynamoDBLocal.jar -sharedDb -dbPath ./data"
+   image: "amazon/dynamodb-local:latest"
+   container_name: dynamodb-local
+   ports:
+     - "8000:8000"
+   volumes:
+     - "./docker/dynamodb:/home/dynamodblocal/data"
+   working_dir: /home/dynamodblocal
+   networks:
+    dynamodbNetwork:
+      ipv4_address: 172.22.0.2
+      aliases:
+      - dynamodblocal
+
+networks:
+  dynamodbNetwork:
+    name: dynamo_net
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: "172.22.0.0/16"

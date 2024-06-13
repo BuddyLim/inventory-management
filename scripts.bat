@@ -1,0 +1,1 @@
+aws dynamodb create-table --cli-input-yaml "`cat template.yaml | yq e '.Resources.InventoryTable.Properties' -`" --no-cli-pager --endpoint-url http://localhost:8000

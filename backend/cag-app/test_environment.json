@@ -1,0 +1,11 @@
+{
+  "CreateInventoryFunction":{
+    "ENDPOINT_OVERRIDE": "http://172.22.0.2:8000/",
+    "TABLE_NAME": "inventory_table"
+  },
+  "GetInventoryFunction":{
+    "ENDPOINT_OVERRIDE": "http://172.22.0.2:8000/",
+    "TABLE_NAME": "inventory_table"
+  }
+
+}

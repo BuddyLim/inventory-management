@@ -1,0 +1,18 @@
+{
+  "TableName": "inventory_table",
+  "KeySchema": [
+    { "AttributeName": "id", "KeyType": "HASH" }
+  ],
+  "AttributeDefinitions": [
+    { "AttributeName": "id", "AttributeType": "S" },
+    { "AttributeName": "name", "AttributeType": "S" },
+    { "AttributeName": "category", "AttributeType": "S" },
+    { "AttributeName": "dt_from", "AttributeType": "S" },
+    { "AttributeName": "dt_to", "AttributeType": "S" },
+    { "AttributeName": "last_updated_dt", "AttributeType": "S" }
+  ],
+  "ProvisionedThroughput": {
+    "ReadCapacityUnits": 1,
+    "WriteCapacityUnits": 1
+  }
+}
