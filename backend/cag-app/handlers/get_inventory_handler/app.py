@@ -1,77 +1,94 @@
 import json
 import boto3
 import os
+from typing import Dict, Tuple
 from mypy_boto3_dynamodb import ServiceResource
-from boto3.dynamodb.conditions import Attr
+from decimal import Decimal
 
 TABLE_NAME = os.environ['TABLE_NAME']
-ENDPOINT_OVERRIDE = os.environ['ENDPOINT_OVERRIDE']
+AWS_ENVIRON = os.environ.get('AWS_ENVIRON', 'AWS')
+ENDPOINT_OVERRIDE = os.environ.get('ENDPOINT_OVERRIDE', None)
+REGION = os.environ.get('REGION', 'us-east-1')
 
-dynamodb: ServiceResource = boto3.resource('dynamodb', endpoint_url=ENDPOINT_OVERRIDE)
+if AWS_ENVIRON == 'AWS_SAM_LOCAL':
+    dynamodb: ServiceResource = boto3.resource('dynamodb', endpoint_url=ENDPOINT_OVERRIDE)
+else: 
+    dynamodb: ServiceResource = boto3.resource('dynamodb')
+
 table = dynamodb.Table(TABLE_NAME)
 
-from decimal import Decimal
 
 class DecimalEncoder(json.JSONEncoder):
   def default(self, obj):
     if isinstance(obj, Decimal):
-      return str(obj)
+      return float(obj)
     return json.JSONEncoder.default(self, obj)
 
+
+def dt_query_builder(dt_dict: Dict) -> Tuple[str, Dict, Dict]:
+    FilterExpression = '(#last_updated_dt BETWEEN :dt_from AND :dt_to)'
+    ExpressionAttributeValues= {
+        ':dt_from': dt_dict['dt_from'],
+        ':dt_to': dt_dict['dt_to']
+    }
+    ExpressionAttributeNames= {
+        '#last_updated_dt': 'last_updated_dt',
+    }
+
+    return ( FilterExpression, ExpressionAttributeNames, ExpressionAttributeValues )
+
+
+def query_items(dt_dict: Dict):
+    ( FilterExpression, ExpressionAttributeNames, ExpressionAttributeValues ) = dt_query_builder(dt_dict=dt_dict)
+    FilterExpression = FilterExpression
+    ExpressionAttributeNames = ExpressionAttributeNames
+    ExpressionAttributeValues = ExpressionAttributeValues
+
+    item_list = table.scan(
+        FilterExpression=FilterExpression,
+        ExpressionAttributeNames=ExpressionAttributeNames,
+        ExpressionAttributeValues=ExpressionAttributeValues
+    )['Items']
+
+    total_price = round(sum(float(item['price']) for item in item_list), 2)
+
+    return {
+       "items": item_list,
+       "total_price": total_price
+    }
+
+
 def lambda_handler(event, context):
-    """Sample pure Lambda function
-
-    Parameters
-    ----------
-    event: dict, required
-        API Gateway Lambda Proxy Input Format
-
-        Event doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-input-format
-
-    context: object, required
-        Lambda Context runtime methods and attributes
-
-        Context doc: https://docs.aws.amazon.com/lambda/latest/dg/python-context-object.html
-
-    Returns
-    ------
-    API Gateway Lambda Proxy Output Format: dict
-
-        Return doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
-    """
-
-    # try:
-    #     ip = requests.get("http://checkip.amazonaws.com/")
-    # except requests.RequestException as e:
-    #     # Send some context about this error to Lambda Logs
-    #     print(e)
-
-    #     raise e
     print("Table name: ", TABLE_NAME)
-    # print("Table status: ", table.table_status)
 
-    resp = table.scan(
-        FilterExpression='#name = :name',
-        ExpressionAttributeValues= {
-          ":name": "Notebook" 
-        },
-        ExpressionAttributeNames={
-            "#name": "name"
+    if(event['httpMethod'] == 'GET'):   
+        item_list = table.scan()['Items']
+
+        return {
+            "statusCode": 200,
+            "body": json.dumps({
+                "items": item_list,
+            }, cls=DecimalEncoder),
         }
-    )
+    
+    print(event)
 
-    print(resp["Items"])
+    evt_val = json.loads(event['body'])
+    filter_dict = evt_val.get('filters', {})
 
-    response = table.scan(
-        Limit=2
-    )
-    print(response)
-    data = response['Items']
+    if 'dt_range' not in filter_dict:
+        item_list = table.scan()['Items']
+
+        return {
+            "statusCode": 200,
+            "body": json.dumps({
+                "items": item_list,
+            }, cls=DecimalEncoder),
+        }
+
+    resp_dict = query_items(filter_dict['dt_range'])
 
     return {
         "statusCode": 200,
-        "body": json.dumps({
-            "items": data,
-            # "location": ip.text.replace("\n", "")
-        }, cls=DecimalEncoder),
+        "body": json.dumps(resp_dict, cls=DecimalEncoder),
     }

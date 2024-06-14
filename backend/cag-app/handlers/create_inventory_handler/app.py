@@ -1,24 +1,26 @@
 import json
 import boto3
 import os
-from typing import Dict
 from hashlib import sha1
-from decimal import Decimal
-from datetime import datetime
-from boto3.dynamodb.conditions import Key
+from decimal import Decimal, Context
+from datetime import datetime, timezone
 from mypy_boto3_dynamodb import ServiceResource
 
-
 TABLE_NAME = os.environ['TABLE_NAME']
-ENDPOINT_OVERRIDE = os.environ['ENDPOINT_OVERRIDE']
+AWS_ENVIRON = os.environ.get('AWS_ENVIRON', 'AWS')
+ENDPOINT_OVERRIDE = os.environ.get('ENDPOINT_OVERRIDE', None)
 
+if AWS_ENVIRON == 'AWS_SAM_LOCAL':
+    dynamodb: ServiceResource = boto3.resource('dynamodb', endpoint_url=ENDPOINT_OVERRIDE)
+else: 
+    dynamodb: ServiceResource = boto3.resource('dynamodb')
 
-dynamodb: ServiceResource = boto3.resource('dynamodb', endpoint_url=ENDPOINT_OVERRIDE)
 table = dynamodb.Table(TABLE_NAME)
+ctx = Context(prec=2)
 
 
 def return_sha1_hash(text: str) -> str:
-    return sha1(text.encode('utf-8')).hexdigest()
+    return sha1(text.lower().encode('utf-8')).hexdigest()
 
 
 def lambda_handler(event, context):
@@ -30,14 +32,13 @@ def lambda_handler(event, context):
 
     id = return_sha1_hash(text=name)
     
-    last_updated_dt = datetime.now() 
-    last_updated_str = last_updated_dt.strftime("%m/%d/%Y %H:%M:%S")
+    last_updated_dt = datetime.now(timezone.utc).replace(microsecond=0, tzinfo=None).isoformat()
 
     print("---")
     print("Event: ", event)
     print("Table name: ", TABLE_NAME)
     print("ID: ", id)
-    print("last_updated_dt: ", last_updated_str)
+    print("last_updated_dt: ", last_updated_dt)
     print("---")
 
     resp = table.update_item(
@@ -47,8 +48,8 @@ def lambda_handler(event, context):
         UpdateExpression='SET #price= :price, #last_updated_dt= :last_updated_dt, #category = :category, #name = :name',
         ConditionExpression='attribute_exists(id) OR attribute_not_exists (id)',
         ExpressionAttributeValues={
-            ':price':  Decimal(price),
-            ':last_updated_dt': last_updated_str,
+            ':price':  Decimal(str(price)),
+            ':last_updated_dt': last_updated_dt,
             ":category": category,
             ":name": name
         },
@@ -65,6 +66,6 @@ def lambda_handler(event, context):
         "statusCode": 200,
         "body": json.dumps({
             "id": id,
-            "last_updated_dt": last_updated_str
+            "last_updated_dt": last_updated_dt
         }),
     }
