@@ -44,17 +44,19 @@ def lambda_handler(event, context):
         Key={
             'id': id
         },
-        UpdateExpression='SET #price= :price, #last_updated_dt= :last_updated_dt, #category = :category',
-        ConditionExpression='attribute_exists(id)',
+        UpdateExpression='SET #price= :price, #last_updated_dt= :last_updated_dt, #category = :category, #name = :name',
+        ConditionExpression='attribute_exists(id) OR attribute_not_exists (id)',
         ExpressionAttributeValues={
             ':price':  Decimal(price),
             ':last_updated_dt': last_updated_str,
-            ":category": category
+            ":category": category,
+            ":name": name
         },
         ExpressionAttributeNames={
             '#price': 'price',
             '#last_updated_dt': 'last_updated_dt',
-            '#category': 'category'
+            '#category': 'category',
+            '#name': 'name',
         },
         ReturnValues='ALL_NEW'
     )
