@@ -1,15 +1,22 @@
 import json
 import boto3
 import os
-import uuid
 from mypy_boto3_dynamodb import ServiceResource
+from boto3.dynamodb.conditions import Attr
 
 TABLE_NAME = os.environ['TABLE_NAME']
 ENDPOINT_OVERRIDE = os.environ['ENDPOINT_OVERRIDE']
 
-
 dynamodb: ServiceResource = boto3.resource('dynamodb', endpoint_url=ENDPOINT_OVERRIDE)
 table = dynamodb.Table(TABLE_NAME)
+
+from decimal import Decimal
+
+class DecimalEncoder(json.JSONEncoder):
+  def default(self, obj):
+    if isinstance(obj, Decimal):
+      return str(obj)
+    return json.JSONEncoder.default(self, obj)
 
 def lambda_handler(event, context):
     """Sample pure Lambda function
@@ -40,9 +47,20 @@ def lambda_handler(event, context):
     #     print(e)
 
     #     raise e
-    id = str(uuid.uuid4())
     print("Table name: ", TABLE_NAME)
     # print("Table status: ", table.table_status)
+
+    resp = table.scan(
+        FilterExpression='#name = :name',
+        ExpressionAttributeValues= {
+          ":name": "Notebook" 
+        },
+        ExpressionAttributeNames={
+            "#name": "name"
+        }
+    )
+
+    print(resp["Items"])
 
     response = table.scan(
         Limit=2
@@ -55,5 +73,5 @@ def lambda_handler(event, context):
         "body": json.dumps({
             "items": data,
             # "location": ip.text.replace("\n", "")
-        }),
+        }, cls=DecimalEncoder),
     }
