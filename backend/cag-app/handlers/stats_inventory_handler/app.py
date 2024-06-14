@@ -5,14 +5,20 @@ from typing import Dict, Tuple, List
 from mypy_boto3_dynamodb import ServiceResource
 from collections import Counter
 from itertools import groupby
+from decimal import Decimal
 
 TABLE_NAME = os.environ['TABLE_NAME']
-ENDPOINT_OVERRIDE = os.environ['ENDPOINT_OVERRIDE']
+AWS_ENVIRON = os.environ.get('AWS_ENVIRON', 'AWS')
+ENDPOINT_OVERRIDE = os.environ.get('ENDPOINT_OVERRIDE', None)
+REGION = os.environ.get('REGION', 'us-east-1')
 
-dynamodb: ServiceResource = boto3.resource('dynamodb', endpoint_url=ENDPOINT_OVERRIDE)
+if AWS_ENVIRON == 'AWS_SAM_LOCAL':
+    dynamodb: ServiceResource = boto3.resource('dynamodb', endpoint_url=ENDPOINT_OVERRIDE)
+else: 
+    dynamodb: ServiceResource = boto3.resource('dynamodb')
+
 table = dynamodb.Table(TABLE_NAME)
 
-from decimal import Decimal
 
 class DecimalEncoder(json.JSONEncoder):
   def default(self, obj):
@@ -23,21 +29,6 @@ class DecimalEncoder(json.JSONEncoder):
 
 def counterize(x):
     return Counter({k : float(v) for k, v in x.iteritems()})
-
-
-def category_query_builder(category_list: List[str]) -> Tuple[str, Dict, Dict]:
-    FilterExpression = "",
-    ExpressionAttributeNames  = {}
-    ExpressionAttributeValues = {}
-
-    for i, v in enumerate(category_list):
-        # ExpressionAttributeNames[f"#{v}{i}"] = "category"
-        ExpressionAttributeValues[f":category{i}"] = v
-
-    ExpressionAttributeNames['#category'] = 'category'
-    FilterExpression = f"(#category IN ({', '.join(ExpressionAttributeValues.keys())}))"
-
-    return ( FilterExpression, ExpressionAttributeNames, ExpressionAttributeValues )
 
 
 def key_func(k):
@@ -58,7 +49,7 @@ def aggregate_list(item_list: List[Dict]) -> List[Dict]:
             total_price += d['price']
 
         stats_list.append({
-           "total_price": total_price,
+           "total_price": round(float(total_price), 2),
            "count": count,
            "category": key
         })
@@ -67,17 +58,18 @@ def aggregate_list(item_list: List[Dict]) -> List[Dict]:
 
 def lambda_handler(event, context):
     evt_val = json.loads(event['body'])
-    category_list = evt_val['category']
+    category = evt_val.get('category', 'all')
 
     print("Table name: ", TABLE_NAME)
 
-    ( FilterExpression, ExpressionAttributeNames, ExpressionAttributeValues ) = category_query_builder(category_list)
-
-    item_list = table.scan(
-        FilterExpression=FilterExpression,
-        ExpressionAttributeNames=ExpressionAttributeNames,
-        ExpressionAttributeValues=ExpressionAttributeValues
-    )['Items']
+    if(category == 'all'):
+        item_list = table.scan()['Items']
+    else:
+        item_list = table.scan(
+            FilterExpression=f'(#category IN (:category))',
+            ExpressionAttributeNames={ "#category": "category" },
+            ExpressionAttributeValues={ ":category" : category }
+        )['Items']
 
     stats_list = aggregate_list(item_list=item_list)
      

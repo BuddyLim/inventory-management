@@ -1,22 +1,27 @@
 import json
 import boto3
 import os
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple
 from mypy_boto3_dynamodb import ServiceResource
-from boto3.dynamodb.conditions import Attr
+from decimal import Decimal
 
 TABLE_NAME = os.environ['TABLE_NAME']
-ENDPOINT_OVERRIDE = os.environ['ENDPOINT_OVERRIDE']
+AWS_ENVIRON = os.environ.get('AWS_ENVIRON', 'AWS')
+ENDPOINT_OVERRIDE = os.environ.get('ENDPOINT_OVERRIDE', None)
+REGION = os.environ.get('REGION', 'us-east-1')
 
-dynamodb: ServiceResource = boto3.resource('dynamodb', endpoint_url=ENDPOINT_OVERRIDE)
+if AWS_ENVIRON == 'AWS_SAM_LOCAL':
+    dynamodb: ServiceResource = boto3.resource('dynamodb', endpoint_url=ENDPOINT_OVERRIDE)
+else: 
+    dynamodb: ServiceResource = boto3.resource('dynamodb')
+
 table = dynamodb.Table(TABLE_NAME)
 
-from decimal import Decimal
 
 class DecimalEncoder(json.JSONEncoder):
   def default(self, obj):
     if isinstance(obj, Decimal):
-      return str(obj)
+      return float(obj)
     return json.JSONEncoder.default(self, obj)
 
 
@@ -45,7 +50,7 @@ def query_items(dt_dict: Dict):
         ExpressionAttributeValues=ExpressionAttributeValues
     )['Items']
 
-    total_price = sum(float(item['price']) for item in item_list)
+    total_price = round(sum(float(item['price']) for item in item_list), 2)
 
     return {
        "items": item_list,
@@ -54,10 +59,22 @@ def query_items(dt_dict: Dict):
 
 
 def lambda_handler(event, context):
-    evt_val = json.loads(event['body'])
-    filter_dict = evt_val['filters']
-
     print("Table name: ", TABLE_NAME)
+
+    if(event['httpMethod'] == 'GET'):   
+        item_list = table.scan()['Items']
+
+        return {
+            "statusCode": 200,
+            "body": json.dumps({
+                "items": item_list,
+            }, cls=DecimalEncoder),
+        }
+    
+    print(event)
+
+    evt_val = json.loads(event['body'])
+    filter_dict = evt_val.get('filters', {})
 
     if 'dt_range' not in filter_dict:
         item_list = table.scan()['Items']
