@@ -20,6 +20,13 @@ Parameters:
     Default: "AWS"
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
+  Api:
+    Cors:
+      AllowMethods: "'GET,POST,OPTIONS'"
+      AllowHeaders: "'content-type'"
+      # This shouldn't allow all, but there's no time!
+      AllowOrigin: "'*'"
+      # AllowCredentials: true 
   Function:
     Timeout: 300
     MemorySize: 128
