@@ -1,5 +1,14 @@
 # Inventory Management
 
+### Setup Requirements
+  - Python 3.10
+  - Node
+  - Docker
+  - AWS CLI
+    - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+  - SAM CLI
+    - https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html
+
 ### Milestones:
 - Local development using SAM (✅)
 - Bootstrapping local DynamoDB (✅)
@@ -48,4 +57,7 @@
     - `python3 -m pytest tests/ -v`
 
 - ### Frontend
-  - `npm run dev`
+  - For local development:
+    - `npm run dev`
+  - For deploying:
+    - `npm run build` and drop the `/dist` folder into the S3 and create invalidation on the Cloudfront CDN
