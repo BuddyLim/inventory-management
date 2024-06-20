@@ -1,8 +1,8 @@
 import json
-
 import pytest
+import os
+from handlers.get_inventory_handler import app
 
-from hello_world import app
 
 
 @pytest.fixture()
@@ -16,7 +16,7 @@ def apigw_event():
             "resourceId": "123456",
             "apiId": "1234567890",
             "resourcePath": "/{proxy+}",
-            "httpMethod": "POST",
+            "httpMethod": "GET",
             "requestId": "c6af9ac6-7b61-11e6-9a41-93e8deadbeef",
             "accountId": "123456789012",
             "identity": {
@@ -58,15 +58,18 @@ def apigw_event():
         "pathParameters": {"proxy": "/examplepath"},
         "httpMethod": "POST",
         "stageVariables": {"baz": "qux"},
-        "path": "/examplepath",
+        "path": "/inventories",
     }
 
 
 def test_lambda_handler(apigw_event):
-
+    # os.environ['TABLE_NAME'] = 'inventory_ta'
     ret = app.lambda_handler(apigw_event, "")
-    data = json.loads(ret["body"])
 
     assert ret["statusCode"] == 200
-    assert "message" in ret["body"]
-    assert data["message"] == "hello world"
+    assert "items" in ret["body"]
+    items = json.loads(ret['body'])["items"]
+    assert type(items) is list
+
+if __name__ == '__main__':
+    pytest.main()
