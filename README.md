@@ -1,8 +1,8 @@
 # Inventory Management
 
 ### Milestones:
-- Local development using SAM
-- Bootstrapping local DynamoDB
+- Local development using SAM (✅)
+- Bootstrapping local DynamoDB (✅)
 - Get inventory function:
 	- With `datetime` filter iso standard (✅)
 		- Validation (TBD)
