@@ -31,14 +31,14 @@
       
 - ### SAM (in the `/cag-app`)
 	- To invoke locally:
-		    - `sam build` (every code changes need to be rebuild)
-		    - `GetInventoryFunction` Example:
-		      - ```sam local invoke GetInventoryFunction -e handlers/get_inventory_handler/get_events.json --env-vars ./test_environment.json --docker-network dynamo_net;```
-		      - ```sam local invoke GetInventoryFunction -e handlers/get_inventory_handler/filter_events.json --env-vars ./test_environment.json --docker-network dynamo_net;```
-		    - `CreateInventoryFunction` Example:
-		      - ```sam local invoke CreateInventoryFunction -e handlers/create_inventory_handler/create_events.json --env-vars ./test_environment.json --docker-network dynamo_net;```
-		    - `StatsInventoryFunction` Example:
-		      - ```sam local invoke StatsInventoryFunction -e handlers/stats_inventory_handler/events.json --env-vars ./test_environment.json --docker-network dynamo_net;```
+    - `sam build` (every code changes need to be rebuild)
+    - `GetInventoryFunction` Example:
+      - ```sam local invoke GetInventoryFunction -e handlers/get_inventory_handler/get_events.json --env-vars ./test_environment.json --docker-network dynamo_net;```
+      - ```sam local invoke GetInventoryFunction -e handlers/get_inventory_handler/filter_events.json --env-vars ./test_environment.json --docker-network dynamo_net;```
+    - `CreateInventoryFunction` Example:
+      - ```sam local invoke CreateInventoryFunction -e handlers/create_inventory_handler/create_events.json --env-vars ./test_environment.json --docker-network dynamo_net;```
+    - `StatsInventoryFunction` Example:
+      - ```sam local invoke StatsInventoryFunction -e handlers/stats_inventory_handler/events.json --env-vars ./test_environment.json --docker-network dynamo_net;```
 	- To deploy, run:
 	  - `sam build`
 	  - `sam validate`
