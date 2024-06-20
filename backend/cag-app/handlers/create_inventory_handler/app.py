@@ -1,71 +1,75 @@
 import json
 import boto3
 import os
-import uuid
-from decimal import Decimal
-from datetime import datetime
-
+from hashlib import sha1
+from decimal import Decimal, Context
+from datetime import datetime, timezone
+from mypy_boto3_dynamodb import ServiceResource
 
 TABLE_NAME = os.environ['TABLE_NAME']
-ENDPOINT_OVERRIDE = os.environ['ENDPOINT_OVERRIDE']
+AWS_ENVIRON = os.environ.get('AWS_ENVIRON', 'AWS')
+ENDPOINT_OVERRIDE = os.environ.get('ENDPOINT_OVERRIDE', None)
 
+if AWS_ENVIRON == 'AWS_SAM_LOCAL':
+    dynamodb: ServiceResource = boto3.resource('dynamodb', endpoint_url=ENDPOINT_OVERRIDE)
+else: 
+    dynamodb: ServiceResource = boto3.resource('dynamodb')
 
-dynamodb = boto3.resource('dynamodb', endpoint_url=ENDPOINT_OVERRIDE)
 table = dynamodb.Table(TABLE_NAME)
+ctx = Context(prec=2)
+
+
+def return_sha1_hash(text: str) -> str:
+    return sha1(text.lower().encode('utf-8')).hexdigest()
+
 
 def lambda_handler(event, context):
-    """Sample pure Lambda function
+    evt_val = json.loads(event['body'])
+    
+    name = evt_val['name']
+    price = evt_val['price']
+    category = evt_val['category']
 
-    Parameters
-    ----------
-    event: dict, required
-        API Gateway Lambda Proxy Input Format
+    id = return_sha1_hash(text=name)
+    
+    last_updated_dt = datetime.now(timezone.utc).replace(microsecond=0, tzinfo=None).isoformat()
 
-        Event doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-input-format
-
-    context: object, required
-        Lambda Context runtime methods and attributes
-
-        Context doc: https://docs.aws.amazon.com/lambda/latest/dg/python-context-object.html
-
-    Returns
-    ------
-    API Gateway Lambda Proxy Output Format: dict
-
-        Return doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
-    """
-
-    # try:
-    #     ip = requests.get("http://checkip.amazonaws.com/")
-    # except requests.RequestException as e:
-    #     # Send some context about this error to Lambda Logs
-    #     print(e)
-
-    #     raise e
-    id = str(uuid.uuid4())
-    last_updated_dt = datetime.now() 
-    last_updated_str = last_updated_dt.strftime("%m/%d/%Y %H:%M:%S")
     print("---")
+    print("Event: ", event)
     print("Table name: ", TABLE_NAME)
     print("ID: ", id)
-    print("last_updated_dt: ", last_updated_str)
+    print("last_updated_dt: ", last_updated_dt)
     print("---")
 
-    table.put_item(
-        Item={
-            'id': id,
-            "name": "Notebook", 
-            "category": "Stationary", 
-            "price": Decimal(5.5),
-            "last_updated_dt": last_updated_str 
-        }
+    resp = table.update_item(
+        Key={
+            'id': id
+        },
+        UpdateExpression='SET #price= :price, #last_updated_dt= :last_updated_dt, #category = :category, #name = :name',
+        ConditionExpression='attribute_exists(id) OR attribute_not_exists (id)',
+        ExpressionAttributeValues={
+            ':price':  Decimal(str(price)),
+            ':last_updated_dt': last_updated_dt,
+            ":category": category,
+            ":name": name
+        },
+        ExpressionAttributeNames={
+            '#price': 'price',
+            '#last_updated_dt': 'last_updated_dt',
+            '#category': 'category',
+            '#name': 'name',
+        },
+        ReturnValues='ALL_NEW'
     )
 
     return {
         "statusCode": 200,
+        "headers": {
+            "Access-Control-Allow-Origin": "*", # Required for CORS support to work
+            "Access-Control-Allow-Methods": "GET,POST"
+        },
         "body": json.dumps({
             "id": id,
-            "last_updated_dt": last_updated_str
-            # "location": ip.text.replace("\n", "")
+            "last_updated_dt": last_updated_dt
         }),
     }

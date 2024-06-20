@@ -1,11 +1,17 @@
 {
   "CreateInventoryFunction":{
     "ENDPOINT_OVERRIDE": "http://172.22.0.2:8000/",
-    "TABLE_NAME": "inventory_table"
+    "TABLE_NAME": "inventory_table",
+    "AWS_ENVIRON":"AWS_SAM_LOCAL"
   },
   "GetInventoryFunction":{
     "ENDPOINT_OVERRIDE": "http://172.22.0.2:8000/",
-    "TABLE_NAME": "inventory_table"
+    "TABLE_NAME": "inventory_table",
+    "AWS_ENVIRON":"AWS_SAM_LOCAL"
+  },
+  "StatsInventoryFunction":{
+    "ENDPOINT_OVERRIDE": "http://172.22.0.2:8000/",
+    "TABLE_NAME": "inventory_table",
+    "AWS_ENVIRON":"AWS_SAM_LOCAL"
   }
-
 }
