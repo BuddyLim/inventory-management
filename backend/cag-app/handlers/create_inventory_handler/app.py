@@ -66,6 +66,7 @@ def lambda_handler(event, context):
         "statusCode": 200,
         "headers": {
             "Access-Control-Allow-Origin": "*", # Required for CORS support to work
+            "Access-Control-Allow-Methods": "GET,POST"
         },
         "body": json.dumps({
             "id": id,
