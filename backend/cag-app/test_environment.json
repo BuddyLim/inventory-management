@@ -1,17 +1,23 @@
 {
-  "CreateInventoryFunction":{
+  "CreateInventoryFunction": {
     "ENDPOINT_OVERRIDE": "http://172.22.0.2:8000/",
     "TABLE_NAME": "inventory_table",
-    "AWS_ENVIRON":"AWS_SAM_LOCAL"
+    "AWS_ENVIRON": "AWS_SAM_LOCAL"
   },
-  "GetInventoryFunction":{
+  "GetInventoryFunction": {
     "ENDPOINT_OVERRIDE": "http://172.22.0.2:8000/",
     "TABLE_NAME": "inventory_table",
-    "AWS_ENVIRON":"AWS_SAM_LOCAL"
+    "AWS_ENVIRON": "AWS_SAM_LOCAL"
   },
-  "StatsInventoryFunction":{
+  "StatsInventoryFunction": {
     "ENDPOINT_OVERRIDE": "http://172.22.0.2:8000/",
     "TABLE_NAME": "inventory_table",
-    "AWS_ENVIRON":"AWS_SAM_LOCAL"
+    "AWS_ENVIRON": "AWS_SAM_LOCAL"
+  },
+  "DeleteInventoryFunction": {
+    "ENDPOINT_OVERRIDE": "http://172.22.0.2:8000/",
+    "TABLE_NAME": "inventory_table",
+    "AWS_ENVIRON": "AWS_SAM_LOCAL"
   }
 }
+
