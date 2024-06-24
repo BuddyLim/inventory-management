@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >
   cag-app
@@ -13,7 +13,7 @@ Parameters:
   Region:
     Type: String
     Description: AWS Region for deployment
-    Default: 'us-east-1'
+    Default: "us-east-1"
   AWSEnv:
     Type: String
     Description: AWS Environment for deployment
@@ -26,7 +26,7 @@ Globals:
       AllowHeaders: "'content-type'"
       # This shouldn't allow all, but there's no time!
       AllowOrigin: "'*'"
-      # AllowCredentials: true 
+      # AllowCredentials: true
   Function:
     Timeout: 300
     MemorySize: 128
@@ -41,18 +41,18 @@ Resources:
       AttributeDefinitions:
         - AttributeName: id
           AttributeType: S
-        - AttributeName: category_id # used for your Global Secondary Index 
+        - AttributeName: category_id # used for your Global Secondary Index
           AttributeType: S
       KeySchema:
         - AttributeName: id
           KeyType: HASH
       GlobalSecondaryIndexes:
-      - IndexName: category_id
-        KeySchema:
-        - AttributeName: category_id
-          KeyType: HASH
-        Projection:
-          ProjectionType: ALL
+        - IndexName: category_id
+          KeySchema:
+            - AttributeName: category_id
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
       BillingMode: PAY_PER_REQUEST
 
   GetInventoryFunction:
@@ -62,7 +62,7 @@ Resources:
       Handler: app.lambda_handler
       Runtime: python3.10
       Architectures:
-      - x86_64
+        - x86_64
       Environment:
         Variables:
           TABLE_NAME: !Ref InventoryTable
@@ -70,10 +70,10 @@ Resources:
           AWS_ENVIRON: !Ref AWSEnv
           REGION: !Ref Region
       Policies:
-      # Read more about SAM policy templates here
-      # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
-       - DynamoDBCrudPolicy:
-          TableName: !Ref InventoryTable
+        # Read more about SAM policy templates here
+        # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
+        - DynamoDBCrudPolicy:
+            TableName: !Ref InventoryTable
       Events:
         GetInventories:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
@@ -86,14 +86,14 @@ Resources:
             Path: /inventories/search
             Method: post
 
-  StatsInventoryFunction:
+  DeleteInventoryFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      CodeUri: handlers/stats_inventory_handler/
+      CodeUri: handlers/delete_inventory_handler/
       Handler: app.lambda_handler
       Runtime: python3.10
       Architectures:
-      - x86_64
+        - x86_64
       Environment:
         Variables:
           TABLE_NAME: !Ref InventoryTable
@@ -101,10 +101,36 @@ Resources:
           AWS_ENVIRON: !Ref AWSEnv
           REGION: !Ref Region
       Policies:
-      # Read more about SAM policy templates here
-      # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
-       - DynamoDBCrudPolicy:
-          TableName: !Ref InventoryTable
+        # Read more about SAM policy templates here
+        # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
+        - DynamoDBCrudPolicy:
+            TableName: !Ref InventoryTable
+      Events:
+        DeleteInventories:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /inventories/delete
+            Method: post
+
+  StatsInventoryFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: handlers/stats_inventory_handler/
+      Handler: app.lambda_handler
+      Runtime: python3.10
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref InventoryTable
+          ENDPOINT_OVERRIDE: !Ref EndpointOverride
+          AWS_ENVIRON: !Ref AWSEnv
+          REGION: !Ref Region
+      Policies:
+        # Read more about SAM policy templates here
+        # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
+        - DynamoDBCrudPolicy:
+            TableName: !Ref InventoryTable
       Events:
         CreateStatsInventories:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
@@ -119,7 +145,7 @@ Resources:
       Handler: app.lambda_handler
       Runtime: python3.10
       Architectures:
-      - x86_64
+        - x86_64
       Environment:
         Variables:
           TABLE_NAME: !Ref InventoryTable
@@ -127,10 +153,10 @@ Resources:
           AWS_ENVIRON: !Ref AWSEnv
           REGION: !Ref Region
       Policies:
-      # Read more about SAM policy templates here
-      # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
-       - DynamoDBCrudPolicy:
-          TableName: !Ref InventoryTable
+        # Read more about SAM policy templates here
+        # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
+        - DynamoDBCrudPolicy:
+            TableName: !Ref InventoryTable
       Events:
         CreateInventories:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
@@ -145,13 +171,20 @@ Outputs:
   InventoriesApi:
     Description: API Gateway endpoint URL for Prod stage for Inventories
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
-  
+
   GetInventoryFunction:
     Description: Hello World Lambda Function ARN
     Value: !GetAtt GetInventoryFunction.Arn
   GetInventoryFunctionIamRole:
     Description: Implicit IAM Role created for Get Inventory function
     Value: !GetAtt GetInventoryFunctionRole.Arn
+
+  DeleteInventoryFunction:
+    Description: Hello World Lambda Function ARN
+    Value: !GetAtt DeleteInventoryFunction.Arn
+  DeleteInventoryFunctionIamRole:
+    Description: Implicit IAM Role created for Get Inventory function
+    Value: !GetAtt DeleteInventoryFunctionRole.Arn
 
   CreateInventoryFunction:
     Description: Hello World Lambda Function ARN
