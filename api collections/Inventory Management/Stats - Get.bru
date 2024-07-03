@@ -1,0 +1,17 @@
+meta {
+  name: Stats - Get
+  type: http
+  seq: 3
+}
+
+post {
+  url: https://asf76lswwd.execute-api.us-east-1.amazonaws.com/Prod/inventories/stats
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "category":"all"
+  }
+}

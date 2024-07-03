@@ -1,5 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { Button, Form, FormProps, Input, List, Select } from "antd";
+import {
+  Button,
+  Flex,
+  Form,
+  FormProps,
+  Input,
+  List,
+  Modal,
+  Select,
+  Space,
+} from "antd";
 import axios from "axios";
 import { v4 as uuid } from "uuid";
 
@@ -19,16 +29,65 @@ interface InventoryI {
   last_updated_dt: string;
 }
 
+interface StatsI {
+  total_price: number;
+  count: number;
+  category: CategoryEnum;
+}
+
 const InventoryForm: React.FC = () => {
   const [form] = Form.useForm();
+  const [currentStatsCategory, setCurrentStatsCategory] =
+    useState<string>("All");
   const [inventoryList, setInventoryList] = useState<InventoryI[]>([]);
+  const [statsModalOpen, setStatsModalOpen] = useState<boolean>(false);
+  const [statsList, setStatsList] = useState<StatsI[]>([]);
+
+  const [currentPage, setCurrentPage] = useState<number>(0);
+  const [paginationList, setPaginationList] = useState<string[]>([]);
+
+  const fetchPreviousInventoryList = (next_key?: string) => {
+    axios
+      .get(
+        `${import.meta.env.VITE_API_BASE_URL}/inventories?next_key=${next_key ?? ""}`,
+      )
+      .then((res) => {
+        const { items, next_key } = res.data;
+        setCurrentPage((prevValue) => --prevValue);
+        setInventoryList(items);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  };
+
+  const fetchNextInventoryList = (next_key?: string) => {
+    axios
+      .get(
+        `${import.meta.env.VITE_API_BASE_URL}/inventories?next_key=${next_key ?? ""}`,
+      )
+      .then((res) => {
+        const { items, next_key } = res.data;
+        setCurrentPage((prevValue) => ++prevValue);
+        setPaginationList((prevList) => [
+          ...prevList,
+          next_key?.["id"] ?? null,
+        ]);
+        setInventoryList(items);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  };
 
   useEffect(() => {
     axios
       .get(`${import.meta.env.VITE_API_BASE_URL}/inventories`)
       .then((res) => {
-        const { items } = res.data;
+        const { items, next_key } = res.data;
 
+        setPaginationList([items[0]["id"], next_key["id"]]);
+        console.log(paginationList);
         setInventoryList(items);
       })
       .catch((error) => {
@@ -100,9 +159,40 @@ const InventoryForm: React.FC = () => {
       });
   };
 
+  const fetchStatsByCategory = (category: string) => {
+    axios
+      .post(`${import.meta.env.VITE_API_BASE_URL}/inventories/stats`, {
+        category: category,
+      })
+      .then((res) => {
+        console.log(res);
+
+        setStatsList(res.data.items);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
+  const handleModalOpen = () => {
+    setStatsModalOpen((prevFlag) => !prevFlag);
+    fetchStatsByCategory("all");
+  };
+  console.log(currentPage, paginationList);
   return (
     <div className={styles["inventory_container"]}>
-      <h3 style={{ margin: "2% 0 5% 0" }}>Inventory Management</h3>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "baseline",
+        }}
+      >
+        <h3 style={{ margin: "2% 0 5% 0" }}>Inventory Management</h3>
+        <Button type="link" onClick={handleModalOpen}>
+          stats
+        </Button>
+      </div>
       <Form layout="vertical" form={form} onFinish={handleFinish}>
         <Form.Item label="Name" name="name">
           <Input />
@@ -145,25 +235,67 @@ const InventoryForm: React.FC = () => {
           </List.Item>
         )}
       />
+      <Flex>
+        {currentPage !== 0 ? (
+          <Button
+            block
+            type="link"
+            onClick={() => {
+              fetchPreviousInventoryList(paginationList[currentPage - 1]);
+            }}
+          >
+            back
+          </Button>
+        ) : (
+          <div style={{ width: "100%" }} />
+        )}
+        {paginationList[currentPage + 1] !== null ? (
+          <Button
+            block
+            onClick={() =>
+              fetchNextInventoryList(paginationList[currentPage + 1])
+            }
+            type="link"
+          >
+            next
+          </Button>
+        ) : (
+          <div style={{ width: "100%" }} />
+        )}
+      </Flex>
+      <Modal
+        title="Inventory Statistics"
+        open={statsModalOpen}
+        onCancel={handleModalOpen}
+        closable
+      >
+        <Space direction="vertical">
+          <Select
+            value={currentStatsCategory}
+            onSelect={(_, option) => {
+              setCurrentStatsCategory(option.value!);
 
-      {/* <li style={{ color: "black" }} className={styles["inventory_list"]}> */}
-      {/*     {inventoryList.map((inventory, index) => { */}
-      {/*       return ( */}
-      {/*         <ul key={inventory.id} className={styles["inventory_item"]}> */}
-      {/*           <span className={styles["inventory_name"]}> */}
-      {/*             {inventory.name} - ${inventory.price} */}
-      {/*           </span> */}
-      {/*           <Button */}
-      {/*             danger */}
-      {/*             type="primary" */}
-      {/*             onClick={() => handleDeleteInventory(inventory.id, index)} */}
-      {/*           > */}
-      {/*             Delete */}
-      {/*           </Button> */}
-      {/*         </ul> */}
-      {/*       ); */}
-      {/*     })} */}
-      {/*   </li> */}
+              fetchStatsByCategory(option.value!);
+            }}
+            style={{ width: "100%" }}
+            options={[
+              { value: "all", label: "All" },
+              { value: "Clothing", label: "Clothing" },
+              { value: "Stationary", label: "Stationary" },
+              { value: "Books", label: "Books" },
+            ]}
+          />
+          {statsList.map((statsObj, index) => {
+            return (
+              <div key={`stats-${index}`} className={styles["stast_list"]}>
+                <span>{statsObj.category}</span>
+                <span> x{statsObj.count}</span>
+                <span> ${statsObj.total_price}</span>
+              </div>
+            );
+          })}
+        </Space>
+      </Modal>
     </div>
   );
 };

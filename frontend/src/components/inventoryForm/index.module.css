@@ -23,6 +23,12 @@
   flex: 90%;
 }
 
+.stats_list {
+  display: flex;
+  flex-direction: column;
+  gap: 5%;
+}
+
 @media (max-width: 500px) {
   .inventory_container {
     padding: 2% 12%;
