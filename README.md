@@ -1,8 +1,17 @@
 # Inventory Management
 
+### Setup Requirements
+  - Python 3.10
+  - Node
+  - Docker
+  - AWS CLI
+    - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+  - SAM CLI
+    - https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html
+
 ### Milestones:
-- Local development using SAM
-- Bootstrapping local DynamoDB
+- Local development using SAM (✅)
+- Bootstrapping local DynamoDB (✅)
 - Get inventory function:
 	- With `datetime` filter iso standard (✅)
 		- Validation (TBD)
@@ -31,14 +40,14 @@
       
 - ### SAM (in the `/cag-app`)
 	- To invoke locally:
-		    - `sam build` (every code changes need to be rebuild)
-		    - `GetInventoryFunction` Example:
-		      - ```sam local invoke GetInventoryFunction -e handlers/get_inventory_handler/get_events.json --env-vars ./test_environment.json --docker-network dynamo_net;```
-		      - ```sam local invoke GetInventoryFunction -e handlers/get_inventory_handler/filter_events.json --env-vars ./test_environment.json --docker-network dynamo_net;```
-		    - `CreateInventoryFunction` Example:
-		      - ```sam local invoke CreateInventoryFunction -e handlers/create_inventory_handler/create_events.json --env-vars ./test_environment.json --docker-network dynamo_net;```
-		    - `StatsInventoryFunction` Example:
-		      - ```sam local invoke StatsInventoryFunction -e handlers/stats_inventory_handler/events.json --env-vars ./test_environment.json --docker-network dynamo_net;```
+    - `sam build` (every code changes need to be rebuild)
+    - `GetInventoryFunction` Example:
+      - ```sam local invoke GetInventoryFunction -e handlers/get_inventory_handler/get_events.json --env-vars ./test_environment.json --docker-network dynamo_net;```
+      - ```sam local invoke GetInventoryFunction -e handlers/get_inventory_handler/filter_events.json --env-vars ./test_environment.json --docker-network dynamo_net;```
+    - `CreateInventoryFunction` Example:
+      - ```sam local invoke CreateInventoryFunction -e handlers/create_inventory_handler/create_events.json --env-vars ./test_environment.json --docker-network dynamo_net;```
+    - `StatsInventoryFunction` Example:
+      - ```sam local invoke StatsInventoryFunction -e handlers/stats_inventory_handler/events.json --env-vars ./test_environment.json --docker-network dynamo_net;```
 	- To deploy, run:
 	  - `sam build`
 	  - `sam validate`
@@ -48,4 +57,7 @@
     - `python3 -m pytest tests/ -v`
 
 - ### Frontend
-  - `npm run dev`
+  - For local development:
+    - `npm run dev`
+  - For deploying:
+    - `npm run build` and drop the `/dist` folder into the S3 and create invalidation on the Cloudfront CDN
