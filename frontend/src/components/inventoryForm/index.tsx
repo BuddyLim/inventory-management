@@ -9,6 +9,7 @@ import {
   Modal,
   Select,
   Space,
+  notification,
 } from "antd";
 import axios from "axios";
 import { v4 as uuid } from "uuid";
@@ -46,18 +47,23 @@ const InventoryForm: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [paginationList, setPaginationList] = useState<string[]>([]);
 
+  const [api, contextHolder] = notification.useNotification();
+
   const fetchPreviousInventoryList = (next_key?: string) => {
     axios
       .get(
         `${import.meta.env.VITE_API_BASE_URL}/inventories?next_key=${next_key ?? ""}`,
       )
       .then((res) => {
-        const { items, next_key } = res.data;
+        const { items } = res.data;
         setCurrentPage((prevValue) => --prevValue);
         setInventoryList(items);
       })
       .catch((error) => {
         console.log(error);
+        api.error({
+          message: "Error fetching previous inventories!",
+        });
       });
   };
 
@@ -76,6 +82,9 @@ const InventoryForm: React.FC = () => {
         setInventoryList(items);
       })
       .catch((error) => {
+        api.error({
+          message: "Error fetching next inventories!",
+        });
         console.log(error);
       });
   };
@@ -92,6 +101,9 @@ const InventoryForm: React.FC = () => {
       })
       .catch((error) => {
         console.log(error);
+        api.error({
+          message: "Error getting inventories!",
+        });
       });
   }, []);
 
@@ -134,6 +146,9 @@ const InventoryForm: React.FC = () => {
       })
       .catch((error) => {
         console.log(error);
+        api.error({
+          message: "Error creating new inventories!",
+        });
       });
   };
 
@@ -156,6 +171,9 @@ const InventoryForm: React.FC = () => {
           newList.splice(index, 0, tempInventory);
           return [...newList];
         });
+        api.error({
+          message: "Error deleting inventory!",
+        });
       });
   };
 
@@ -171,6 +189,9 @@ const InventoryForm: React.FC = () => {
       })
       .catch((err) => {
         console.log(err);
+        api.error({
+          message: "Error fetching inventories stats!",
+        });
       });
   };
 
@@ -178,9 +199,10 @@ const InventoryForm: React.FC = () => {
     setStatsModalOpen((prevFlag) => !prevFlag);
     fetchStatsByCategory("all");
   };
-  console.log(currentPage, paginationList);
+
   return (
     <div className={styles["inventory_container"]}>
+      {contextHolder}
       <div
         style={{
           display: "flex",
