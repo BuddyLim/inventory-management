@@ -1,31 +1,40 @@
 # Inventory Management
 
+A take home assessment using React, Python Lambda, API Gateway, DynamoDB and S3
+
+[Website](d299iwhx7j8nco.cloudfront.net/)
+
+### Rough architectural diagram
+
+![alt text](./extra/ad.png)
+
 ### Setup Requirements
-  - Python 3.10
-  - Node
-  - Docker
-  - AWS CLI
-    - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
-  - SAM CLI
-    - https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html
+
+- Python 3.10
+- Node
+- Docker
+- AWS CLI
+  - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+- SAM CLI
+  - https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html
 
 ### Milestones:
+
 - Local development using SAM (✅)
 - Bootstrapping local DynamoDB (✅)
 - Get inventory function:
-	- With `datetime` filter iso standard (✅)
-		- Validation (TBD)
-	- Pagination (TBD)
--  Stats inventory function:
-	- Aggregate by category (✅)
--  Create inventory function:
-	- Normalize name for consistent hashing (✅)
-		- `Sha1` hashing as primary key (✅)
-	- Normalize category to unique ID (TDB)
+  - With `datetime` filter iso standard (✅)
+    - Validation (TBD)
+  - Pagination (✅ - ish)
+- Stats inventory function:
+  - Aggregate by category (✅)
+- Create inventory function:
+  - Normalize name for consistent hashing (✅)
+    - `Sha1` hashing as primary key (✅)
+  - Normalize category to unique ID (TDB)
 - Deploying to AWS using SAM (✅)
 - Minor testing (not very complete 😬)
 - Frontend deployment to S3 & Cloudfront (✅)
-
 
 ### Setup guide (Local Development)
 
@@ -36,22 +45,23 @@
   - Local Dynamodb (in the `/cag-app`)
     - install `yq` (Yaml parser, I'd prefer to use this to sync with whatever changes is done to `template.yml`)
     - To bootstrap local dynamodb table:
-      - ```aws dynamodb create-table --cli-input-yaml "`cat template.yaml | yq e '.Resources.InventoryTable.Properties' -`" --no-cli-pager --endpoint-url http://localhost:8000```
-      
+      - `` aws dynamodb create-table --cli-input-yaml "`cat template.yaml | yq e '.Resources.InventoryTable.Properties' -`" --no-cli-pager --endpoint-url http://localhost:8000 ``
 - ### SAM (in the `/cag-app`)
-	- To invoke locally:
+
+  - To invoke locally:
     - `sam build` (every code changes need to be rebuild)
     - `GetInventoryFunction` Example:
-      - ```sam local invoke GetInventoryFunction -e handlers/get_inventory_handler/get_events.json --env-vars ./test_environment.json --docker-network dynamo_net;```
-      - ```sam local invoke GetInventoryFunction -e handlers/get_inventory_handler/filter_events.json --env-vars ./test_environment.json --docker-network dynamo_net;```
+      - `sam local invoke GetInventoryFunction -e handlers/get_inventory_handler/get_events.json --env-vars ./test_environment.json --docker-network dynamo_net;`
+      - `sam local invoke GetInventoryFunction -e handlers/get_inventory_handler/filter_events.json --env-vars ./test_environment.json --docker-network dynamo_net;`
     - `CreateInventoryFunction` Example:
-      - ```sam local invoke CreateInventoryFunction -e handlers/create_inventory_handler/create_events.json --env-vars ./test_environment.json --docker-network dynamo_net;```
+      - `sam local invoke CreateInventoryFunction -e handlers/create_inventory_handler/create_events.json --env-vars ./test_environment.json --docker-network dynamo_net;`
     - `StatsInventoryFunction` Example:
-      - ```sam local invoke StatsInventoryFunction -e handlers/stats_inventory_handler/events.json --env-vars ./test_environment.json --docker-network dynamo_net;```
-	- To deploy, run:
-	  - `sam build`
-	  - `sam validate`
-	  - `sam deploy`
+      - `sam local invoke StatsInventoryFunction -e handlers/stats_inventory_handler/events.json --env-vars ./test_environment.json --docker-network dynamo_net;`
+  - To deploy, run:
+
+    - `sam build`
+    - `sam validate`
+    - `sam deploy`
 
   - Testing (abliet not very through.., in the `/cag-app`)
     - `python3 -m pytest tests/ -v`
